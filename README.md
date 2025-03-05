@@ -27,5 +27,5 @@ IMPORTANT:
 Changes to make:
 
    - Added comment on line 204 surrounded by ###, so whoever worked on research question 2, please address
-   - Need to remove a further 8 pages (18th page is just a graph)
+   - Need to remove a further 8 pages
    - Double check Contributions section for accuracy, update as needed
