@@ -1,13 +1,16 @@
 # Stat-423-Final-Report
 
 Changes I made:
+
 Organzied document in format of:
    - Intro/data loading and cleaning; and response to teacher question 3
    - Research questions 1 - 4
    - Response to teacher question 4
 
 Removed names declaring which section they worked on
+
 Removed "I" and replaced with "we" #Note: as much as I noticed
+
 Worked on reducing space taken up:
   - Globally: Reduced all figure sizes
   - For research question 1: Removed a couple unnecessary graphs as noted by Arnav
