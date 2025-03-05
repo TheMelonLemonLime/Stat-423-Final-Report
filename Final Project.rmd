@@ -465,13 +465,19 @@ ggplot(results, aes(x = Actual, y = Predicted)) +
 # Contributions
 
 Itroduction:
+
     - Loading and Cleaning the Data: Maxx
     - Removing Outliers: Harry
     - Response to Teacher Question 3: Arnav
+    
 Research Question 1: Arnav
+
 Research Question 2: Harry
+
 Research Question 3: Casey
+
 Research Question 4: Casey
+
 Teacher Question 4: Casey and Mohit
 
 Organization and formatting: Maxx
