@@ -12,7 +12,7 @@ library(MASS)
 
 # Introduction
 
-## Loading and Cleaning Data
+## Loading and Cleaning the Data
 
 First we load the data we are using and remove NA's. Then we also set aside a portion of the data for later training/testing data.
 
@@ -461,3 +461,17 @@ ggplot(results, aes(x = Actual, y = Predicted)) +
   
 
 ```
+
+# Contributions
+
+Itroduction:
+    - Loading and Cleaning the Data: Maxx
+    - Removing Outliers: Harry
+    - Response to Teacher Question 3: Arnav
+Research Question 1: Arnav
+Research Question 2: Harry
+Research Question 3: Casey
+Research Question 4: Casey
+Teacher Question 4: Casey and Mohit
+
+Organization and formatting: Maxx
