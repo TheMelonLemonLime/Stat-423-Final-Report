@@ -41,12 +41,16 @@ ggplot(data = fifa, aes(x=overall_rating))+
   geom_histogram(binwidth = 1)
 ```
 
+### Fig. 1
+
 As we can see, our main response variable, overall_rating, is approximately normally distributed and has no outliers.
 
 ```{r}
 ggplot(data = fifa, aes(x=height_cm, y=weight_kgs))+
   geom_point()
 ```
+
+### Fig. 2
 
 We know from background information that height and weight should be positively correlated, and we expect to see that in this visualization. We mostly see this, but something is clearly off. We googled the heights to convert centimeters to inches and found that the outliers occur at heights 5’0” and 5’1”. We also noticed that the data has an empty patch in the middle of the x axis, indicating that some heights are not included. We hypothesized that there was an error by the creators of the dataset in their data scraping process, in which 5’10” players were recorded as 5’0” and 5’11” was recorded as 5’1”. The next code chunk shows us testing this hypothesis and seeing that 5’10” and 5’11” were indeed the missing heights, so we decided to rewrite the data set so that all 5’0” entries were corrected to 5’10” and all 5’1” entries were corrected to 5’11”. However, the issue with this is that there could be a few players who really are 5’0” and 5’1” in the dataset and they need to be recorded with their accurate height. To solve this problem, we looked through the original data source (<https://sofifa.com/players?col=hi&sort=asc&r=190043&set=true>) and searched for 5’0” and 5’1” players. There were only 3, so we manually filtered by name to get their true height reflected in the dataset. After the following chunk the height column will have accurate data.
 
@@ -62,6 +66,8 @@ ggplot(data = fifa_test, aes(x=height_cm, y=weight_kgs))+
 
 fifa <- fifa_test
 ```
+
+### Fig. 3
 
 ## Response to Teacher Question 3:
 
@@ -90,6 +96,8 @@ cor_matrix <- cor(new_fifa[, sapply(new_fifa, is.numeric)])
 heatmap(cor_matrix, symm = TRUE, col = colorRampPalette(c("blue", "white", "red"))(100))
 ```
 
+### Fig. 4
+
 So we started by looking at the relationship between each of our chosen predictors and the output variable of overall_rating
 
 ```{r, fig.height=3, fig.width=6}
@@ -98,6 +106,8 @@ plot(new_fifa$value_euro, new_fifa$overall_rating)
 plot(new_fifa$wage_euro, new_fifa$overall_rating)
 ```
 
+### Fig. 5
+
 We saw roughly linear relationships for most cases. However, for value_euro and wage_euro, our scatter plots look very similar to a logarithmic curve. Thus, we need to apply a transformation to our data and instead use ln(value_euro) and ln(wage_euro)
 
 ```{r, fig.height=3, fig.width=6}
@@ -105,6 +115,8 @@ par(mfrow = c(1, 2))
 plot(log(new_fifa$value_euro), new_fifa$overall_rating)
 plot(log(new_fifa$wage_euro), new_fifa$overall_rating)
 ```
+
+### Fig. 6
 
 This shows a much better linear relationship.
 
@@ -124,9 +136,12 @@ correlations <- data.frame(
     cor(log(new_fifa$wage_euro), new_fifa$overall_rating)
   )
 )
-
 print(correlations)
+
 ```
+
+### Table 1
+
 
 We can see we found particularly high values for log(value_euro), log(wage_euro).
 
@@ -158,6 +173,8 @@ Running an ANOVA to compare our two models:
 anova(model1, model2)
 ```
 
+As we can see from the ANOVA, we had a p-value of 0.2091. Remember, in the ANOVA test, our null hypothesis is that there is no difference between our models. Our p-value being > alpha 0.05 proves that we fail to reject the null and do not have significantly significant evidence there is a difference between the two models. We can interpret this as meaning that our smaller model is as effective as the larger one and is a better choice for us to use since it is more condensed. 
+
 
 
 # Research Question 2:
@@ -178,8 +195,9 @@ boxplot(fifa$overall_rating ~ fifa$skill_moves.1.5.,
         main='Overall Rating by Skill Move',
         xlab='Skill Moves(1-5)',
         ylab='FIFA Ovr. Rating')
-
 ```
+
+### Fig. 7
 
 Both these plots indicate that there is some correlation between these discrete predictors. For the most part, the quartiles and medians gradually increase as we move up by 1 star, and we can see a noticeable difference between 1 star and 5 stars, particularly in skill moves. However, the boxplots are labeling many points as outliers on almost every boxplot. We already examined the overall rating column for outliers, so we know these points belong in our data. It makes me wonder if this is a case of correlation not causation, because these points seem unaffected by the respective discrete predictor. Additionally, it could be that these points have some other factor that is causing these discrete ratings to not matter.
 
@@ -225,8 +243,9 @@ boxplot(gk$overall_rating ~ gk$skill_moves.1.5.,
         main='GK Overall Rating by Skill Move',
         xlab='Skill Moves(1-5)',
         ylab='FIFA Ovr. Rating')
-
 ```
+
+### Fig. 8
 
 It appears that the correlation for weak foot is weaker than for all positions. More significantly though, we found that every goalkeeper only has one star skill moves. This means that skill moves rating will have no predictive value for goalkeepers, and this is also effecting the signficance of this variable on our base model.
 
@@ -246,9 +265,9 @@ boxplot(cb$overall_rating ~ cb$skill_moves.1.5.,
         main='CB Overall Rating by Skill Move',
         xlab='Skill Moves(1-5)',
         ylab='FIFA Ovr. Rating')
-
-
 ```
+
+### Fig. 9
 
 We see some similar issues in the data for centerbacks(CBs). Weak foot seems to have very little correlation with overall rating for CBs, and every CB in the game only have a skill move rating of 2 or 3.
 
@@ -275,6 +294,8 @@ discrete_lm <- lm(data=filtered, overall_rating ~ weak_foot.1.5. + skill_moves.1
 summary(discrete_lm)
 ```
 
+### Fig. 10
+
 Based on the new boxplots, filtering by position didn't affect weak foot that much, but the skill moves plot looks very strongly correlated now. These observations are backed up by the updated linear model, which has a slightly higher $\hat{\beta}$ for weak foot but much higher for skill moves.
 
 In conclusion, there is only a small amount of positive correlation between weak foot and overall rating. It is unclear if weak foot really has an effect on overall rating or if the two variables are just correlated. On the other hand, there is a strong positive correlation between skill moves and overall rating. Skill moves is a strong predictor of overall rating. It is either having a strong effect on overall rating, or it is very strongly correlated with a variable that is, such as dribbling or ball_control. However, all goalkeepers in FIFA have one star skill moves, and they are the only players in the game with this. Thus, skill moves is only a useful predictor for non goalkeepers, and using it in a dataset with goalkeepers will make it less effective of a predictor. A similar effect also applies to centerbacks, although less extreme.
@@ -293,24 +314,26 @@ model <- lm(data = training_data, value_euro ~ overall_rating)
 # Extract and print R-squared value
 r_squared <- summary(model)$r.squared
 print(paste0("R-squared: ", round(r_squared, 4)))
+```
 
 
-
+```{r}
 ggplot(fifa, aes(x = overall_rating, y = value_euro)) +
   geom_point() +
   geom_smooth(method = "lm") +
   labs(title = "Overall Rating vs Market Value", x = "Overall Rating", y = "Market Value (€)")
-
-
- 
 ```
+
+### Fig. 11
 
 We have a moderately strong positive relationship between a player's overall rating and their market value from a correlation of 0.6309, As we can see, this is horrendous. Let's look into a transformation!
 
+
 ```{r}
 boxcox(model, plotit = T)
-
 ```
+
+### Fig. 12
 
 We can see $\lambda$ = 0 so let's try a log transformation!
 
@@ -325,17 +348,13 @@ log_transformed_model <- lm(data = training_data, log(value_euro) ~ overall_rati
 # Extract and print R-squared value
 r_squared_log <- summary(log_transformed_model)$r.squared
 print(paste0("Log Transformed R-squared: ", round(r_squared_log , 4)))
-
-
-
 ggplot(fifa, aes(x = overall_rating, y = log(value_euro))) +
   geom_point() +
   geom_smooth(method = "lm") +
   labs(title = "Overall Rating vs Market Value", x = "Overall Rating", y = "Log Market Value (€)")
-
-
- 
 ```
+
+### Fig. 13
 
 Our correlation suggests a strong relationship between player overall rating and market value after taking the log-transform of market value. Our r squared is much higher now too.
 
@@ -439,17 +458,9 @@ cat("Root Mean Squared Error (RMSE):", rmse)
 
 ```{r}
 
- 
-
- 
-
-
-
 # Combine actual vs predicted with lower and upper bounds
 results <- cbind(test_data$overall_rating, pred_intervals)
 colnames(results) <- c("Actual", "Predicted", "Lower_Bound","Upper_Bound")
-
-
 # Plot Actual vs Predicted with prediction intervals
 ggplot(results, aes(x = Actual, y = Predicted)) +
   geom_point(aes(color = "Actual vs Predicted"), size = 2, shape = 21, color = "black", fill="pink") +
@@ -457,10 +468,9 @@ ggplot(results, aes(x = Actual, y = Predicted)) +
   geom_abline( color = "blue", linetype ="dashed") +
   labs(title = "Actual vs Predicted Overall Rating with Prediction Intervals",
        x = "Actual Overall Rating",y = "Predicted Overall Rating")
-
-  
-
 ```
+
+### Fig. 14
 
 # Contributions
 
