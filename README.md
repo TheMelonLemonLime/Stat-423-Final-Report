@@ -28,4 +28,5 @@ Changes to make:
 
    - Added comment on line 204 surrounded by ###, so whoever worked on research question 2, please address
    - Need to remove a further 8 pages
+           - A lot of unneccessary plots/summaries could probably be removed as project guidelines states: 'include relevant tables and plots' and 'Do not include large amounts of raw computer output'. We can probably go over this on Friday and deem what is necessary.
    - Double check Contributions section for accuracy, update as needed
