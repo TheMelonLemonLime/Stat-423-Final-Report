@@ -1,0 +1,41 @@
+---
+title: "Final Project"
+author: 'Arnav, Casey, Harry, Maxx, Mohit'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 5, fig.height = 2)
+library(tidyverse)
+library(MASS)
+```
+
+# Introduction
+
+## Loading and Cleaning the Data
+
+First we load the data we are using and remove NA's. Then we also set aside a portion of the data for later training/testing data.
+
+```{r, message=FALSE}
+fifa <- read.csv('fifa_players.csv')
+data <- fifa
+fifa <- fifa[, c("overall_rating", "weak_foot.1.5.", "skill_moves.1.5.", "sprint_speed", "dribbling",
+                   "strength", "stamina", "value_euro", "wage_euro")]
+test_na <- fifa[!complete.cases(fifa), ]
+fifa <- na.omit(fifa) 
+colSums(is.na(test_na))
+
+# Generate training/test data:
+set.seed(123)
+
+
+# 80% Training 20% test data:
+sample <- sample(c(TRUE, FALSE), nrow(data), replace=TRUE, prob=c(0.8,0.2))
+
+training_data  <- data[sample, ]
+test_data   <- data[!sample, ]
+training_data <- na.omit(training_data)
+test_data <- na.omit(test_data)
+```
+
+The total amount of observations in our FIFA after removing NA's dataset is: `r nrow(fifa)`, and the total variables/columns is: `r ncol(fifa)`
