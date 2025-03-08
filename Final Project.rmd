@@ -8,6 +8,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE, fig.width = 5, fig.height = 2)
 library(tidyverse)
 library(MASS)
+library(ggplot2)
 ```
 
 # Introduction
@@ -67,7 +68,100 @@ ggplot(data = fifa_test, aes(x=height_cm, y=weight_kgs))+
 fifa <- fifa_test
 ```
 
+Now our goal is to detect, analyze, and assess whether outliers in our dataset should be removed or mitigated in another way. To do this, we examined overall rating, height, and weight for potential extreme values. We began by generating boxplots for key numerical variables to visualize any extreme values.
+
 ### Fig. 3
+
+```{r}
+par(mfrow = c(1, 3))  # Arrange plots in one row
+boxplot(fifa$overall_rating, main = "Overall Rating", col = "lightblue")
+boxplot(fifa$height_cm, main = "Height (cm)", col = "lightgreen")
+boxplot(fifa$weight_kgs, main = "Weight (kg)", col = "lightcoral")
+```
+
+From these boxplots we can see that height seems to be approximately distributed. However, there are outliers at both extremes for both Rating and Weight, with players rated above 85 and below 50 while in weight, some players are below 55kg or above 95kg. To anaylze these outliers further and see if they have an effect, we can identify the most extreme values and look at them:
+
+### Table 1 and 2
+
+```{r}
+rating_outliers <- fifa[fifa$overall_rating < 50 | fifa$overall_rating > 85, c("name", "overall_rating")]
+
+head(rating_outliers[order(-rating_outliers$overall_rating), ], 10)  # Highest-rated players
+head(rating_outliers[order(rating_outliers$overall_rating), ], 10)   # Lowest-rated players
+```
+
+The highest-rated outliers include Lionel Messi (94), Cristiano Ronaldo (94), and Neymar Jr. (92). Since these values accurately reflect the skill level of these players, they should not be removed. On the other end, the lowest-rated players, such as N. Fuentes and S. Squire (47 overall rating), are likely reserve or youth players. While they appear as outliers, they are realistic and do not indicate data errors.
+
+### Table 3 and 4
+
+```{r}
+weight_outliers <- fifa[fifa$weight_kgs < 55 | fifa$weight_kgs > 95, c("name", "weight_kgs", "height_cm")]
+head(weight_outliers[order(-weight_outliers$weight_kgs), ], 10)  # Heaviest players
+head(weight_outliers[order(weight_outliers$weight_kgs), ], 10)   # Lightest players
+```
+
+The heaviest players include Adebayo Akinfenwa (110.2 kg) and multiple goalkeepers who exceed 100 kg. Given that goalkeepers and defenders tend to be heavier, these values are valid and should not be removed. For the lightest players, we found that Kazuki Yamaguchi and B. Al Mutairi weigh around 49.9 kg, which aligns with expectations for smaller midfielders and forwards. These values are not errors and should also be kept in the dataset.
+
+### Fig. 4 and 5
+
+While our analysis confirmed that the outliers in overall rating and weight are valid, extreme values can still influence the regression model. Instead of removing them, we can apply methods to reduce their impact while keeping the dataset intact.
+The first step was to log-transform weight to make the distribution more normal.
+
+```{r}
+ggplot(fifa, aes(x=weight_kgs)) + 
+  geom_histogram(binwidth = 2, fill = "blue", alpha = 0.6) +
+  labs(title = "Distribution of Weight Before Log Transformation",
+       x = "Weight (kg)", y = "Count")
+
+fifa$log_weight <- log(fifa$weight_kgs)
+
+ggplot(fifa, aes(x=log_weight)) + 
+  geom_histogram(binwidth = 0.1, fill = "red", alpha = 0.6) +
+  labs(title = "Distribution of Weight After Log Transformation",
+       x = "Log Weight", y = "Count")
+```
+
+Before applying the log transformation, the histogram of weight showed a clear right-skewed distribution, where a small number of very heavy players disproportionately influenced the overall weight distribution. After the transformation, the distribution became much more symmetrical, resembling a normal distribution. This adjustment ensures that extreme weight values do not overly influence the regression model while preserving all player observations.
+
+Traditional ordinary least squares (OLS) regression is highly sensitive to extreme values. This means that a few very heavy or light players could disproportionately influence the regression coefficients. To prevent this, we implemented robust regression, which assigns less weight to extreme values while still considering them.
+
+### Fig. 6
+
+```{r}
+library(MASS) # For robust regression
+
+standard_model <- lm(overall_rating ~ weight_kgs, data = fifa)
+robust_model <- rlm(overall_rating ~ weight_kgs, data = fifa)
+
+ggplot(fifa, aes(x = weight_kgs, y = overall_rating)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", color = "blue", se = FALSE, linetype = "dashed") +   geom_smooth(method = "rlm", color = "red", se = FALSE) +
+  labs(title = "Standard vs Robust Regression (Weight vs. Overall Rating)",
+       x = "Weight (kg)", y = "Overall Rating") +
+  theme_minimal()
+```
+
+The results of this comparison show a clear difference between standard regression and robust regression. In the scatter plot, the blue dashed line represents standard OLS regression, which is strongly influenced by extreme values. The red solid line represents robust regression, which follows the general trend of the data but is less affected by extreme values. By implementing robust regression, we ensure that our model is less sensitive to extreme weight values, making it more stable and interpretable.
+
+To further validate whether keeping outliers affects model accuracy, we compared models with and without extreme weight values by examining the adjusted R² values and AIC information.
+
+```{r}
+full_model <- lm(overall_rating ~ sprint_speed + dribbling + strength + stamina + log(weight_kgs), data = fifa)
+clean_fifa <- fifa[fifa$weight_kgs >= 55 & fifa$weight_kgs <= 95, ]
+clean_model <- lm(overall_rating ~ sprint_speed + dribbling + strength + stamina + log(weight_kgs), data = clean_fifa)
+
+summary(full_model)$adj.r.squared
+summary(clean_model)$adj.r.squared
+AIC(full_model)
+AIC(clean_model)
+```
+The Adjusted R² values for the full model (0.2968) and the clean model (0.2973) are nearly identical, suggesting that removing extreme weight values does not improve the model’s explanatory power. The AIC values show a slight decrease when outliers are removed, with the clean model at 113,744.3 compared to 114,325.4 for the full model. While a lower AIC generally indicates a better model, the difference of about 580 points is relatively small considering the dataset size. This suggests that the improvement from removing outliers is minor and does not justify eliminating valid data points.
+
+Conclusion:
+Since removing outliers does not significantly improve predictive accuracy, we retain all players while applying transformations and robust modeling to ensure a more stable regression analysis. These adjustments allow us to preserve real-world player data while preventing extreme values from skewing the results, ultimately leading to a more reliable model for predicting FIFA player ratings.
+
+
+### Fig. 7
 
 ## Response to Teacher Question 3:
 
@@ -96,7 +190,7 @@ cor_matrix <- cor(new_fifa[, sapply(new_fifa, is.numeric)])
 heatmap(cor_matrix, symm = TRUE, col = colorRampPalette(c("blue", "white", "red"))(100))
 ```
 
-### Fig. 4
+### Fig. 8
 
 So we started by looking at the relationship between each of our chosen predictors and the output variable of overall_rating
 
@@ -106,7 +200,7 @@ plot(new_fifa$value_euro, new_fifa$overall_rating)
 plot(new_fifa$wage_euro, new_fifa$overall_rating)
 ```
 
-### Fig. 5
+### Fig. 9
 
 We saw roughly linear relationships for most cases. However, for value_euro and wage_euro, our scatter plots look very similar to a logarithmic curve. Thus, we need to apply a transformation to our data and instead use ln(value_euro) and ln(wage_euro)
 
@@ -116,7 +210,7 @@ plot(log(new_fifa$value_euro), new_fifa$overall_rating)
 plot(log(new_fifa$wage_euro), new_fifa$overall_rating)
 ```
 
-### Fig. 6
+### Fig. 10
 
 This shows a much better linear relationship.
 
@@ -140,7 +234,7 @@ print(correlations)
 
 ```
 
-### Table 1
+### Table 5
 
 
 We can see we found particularly high values for log(value_euro), log(wage_euro).
@@ -197,7 +291,7 @@ boxplot(fifa$overall_rating ~ fifa$skill_moves.1.5.,
         ylab='FIFA Ovr. Rating')
 ```
 
-### Fig. 7
+### Fig. 11
 
 Both these plots indicate that there is some correlation between these discrete predictors. For the most part, the quartiles and medians gradually increase as we move up by 1 star, and we can see a noticeable difference between 1 star and 5 stars, particularly in skill moves. However, the boxplots are labeling many points as outliers on almost every boxplot. We already examined the overall rating column for outliers, so we know these points belong in our data. It makes me wonder if this is a case of correlation not causation, because these points seem unaffected by the respective discrete predictor. Additionally, it could be that these points have some other factor that is causing these discrete ratings to not matter.
 
@@ -245,7 +339,7 @@ boxplot(gk$overall_rating ~ gk$skill_moves.1.5.,
         ylab='FIFA Ovr. Rating')
 ```
 
-### Fig. 8
+### Fig. 12
 
 It appears that the correlation for weak foot is weaker than for all positions. More significantly though, we found that every goalkeeper only has one star skill moves. This means that skill moves rating will have no predictive value for goalkeepers, and this is also effecting the signficance of this variable on our base model.
 
@@ -267,7 +361,7 @@ boxplot(cb$overall_rating ~ cb$skill_moves.1.5.,
         ylab='FIFA Ovr. Rating')
 ```
 
-### Fig. 9
+### Fig. 13
 
 We see some similar issues in the data for centerbacks(CBs). Weak foot seems to have very little correlation with overall rating for CBs, and every CB in the game only have a skill move rating of 2 or 3.
 
@@ -294,7 +388,7 @@ discrete_lm <- lm(data=filtered, overall_rating ~ weak_foot.1.5. + skill_moves.1
 summary(discrete_lm)
 ```
 
-### Fig. 10
+### Fig. 14
 
 Based on the new boxplots, filtering by position didn't affect weak foot that much, but the skill moves plot looks very strongly correlated now. These observations are backed up by the updated linear model, which has a slightly higher $\hat{\beta}$ for weak foot but much higher for skill moves.
 
@@ -324,7 +418,7 @@ ggplot(fifa, aes(x = overall_rating, y = value_euro)) +
   labs(title = "Overall Rating vs Market Value", x = "Overall Rating", y = "Market Value (€)")
 ```
 
-### Fig. 11
+### Fig. 15
 
 We have a moderately strong positive relationship between a player's overall rating and their market value from a correlation of 0.6309, As we can see, this is horrendous. Let's look into a transformation!
 
@@ -333,7 +427,7 @@ We have a moderately strong positive relationship between a player's overall rat
 boxcox(model, plotit = T)
 ```
 
-### Fig. 12
+### Fig. 16
 
 We can see $\lambda$ = 0 so let's try a log transformation!
 
@@ -354,7 +448,7 @@ ggplot(fifa, aes(x = overall_rating, y = log(value_euro))) +
   labs(title = "Overall Rating vs Market Value", x = "Overall Rating", y = "Log Market Value (€)")
 ```
 
-### Fig. 13
+### Fig. 17
 
 Our correlation suggests a strong relationship between player overall rating and market value after taking the log-transform of market value. Our r squared is much higher now too.
 
@@ -470,7 +564,7 @@ ggplot(results, aes(x = Actual, y = Predicted)) +
        x = "Actual Overall Rating",y = "Predicted Overall Rating")
 ```
 
-### Fig. 14
+### Fig. 18
 
 # Contributions
 
