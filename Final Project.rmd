@@ -167,9 +167,9 @@ Since removing outliers does not significantly improve predictive accuracy, we r
 
 ### "With such a large sample size, you will find a lot of significant predictors. Discuss why."
 
-Our sample size is over 17000 (17898). This can result in many of our predictors being statistically significant because a large sample size leads to an even more precise discovery of relationships between variables, reducing variance. Thus, with a very large sample size, even if the predictor’s impact is smaller, it could still be considered statistically significant. If we think in terms of confidence intervals, they become extremely narrow because the margin of error decreases, and this causes more predictor values to be outside of the interval and thus considered significant. While a predictor could be statistically significant, it may not be an impactful predictor of the output in reality.
+Our sample size is over 17000 (17898). This can result in many of our predictors being statistically significant because a large sample size leads to an even more precise discovery of relationships between variables, reducing variance. Thus, with a very large sample size, even if the predictor’s impact is smaller, it could still be considered statistically significant. If we think in terms of confidence intervals, they become extremely narrow because the margin of error decreases. While a predictor could be statistically significant, it may not be an impactful predictor of the output in reality.
 
-One way we can tackle this problem is by using corrections such as Bonferroni, Holm, or Benjamini Hochberg to lower false positive rates. Also, we used training and testing split in predictions, which can reduce the number of samples during training and prevent overfitting to just the training data (and performing poorly on new data), and could use AIC to choose models as well.
+One way we can tackle this problem is by using corrections such as Bonferroni, Holm, or Benjamini Hochberg to lower false positive rates. Also, we used training and testing split in predictions, which can reduce the number of samples during training and prevent overfitting to just the training data (and performing poorly on new data), and used AIC to choose models as well.
 
 
 # Research Question 1:
@@ -181,6 +181,8 @@ Here is how we set up the model
 ```{r, fig.height=3}
 new_fifa <- fifa[c("overall_rating", "weak_foot.1.5.", "skill_moves.1.5.", "sprint_speed", "dribbling",
                    "strength", "stamina", "value_euro", "wage_euro")]
+new_fifa <- na.omit(new_fifa)
+
 basic <- lm(overall_rating ~ weak_foot.1.5. + skill_moves.1.5. + sprint_speed + dribbling + strength +
               stamina + log(value_euro) + log(wage_euro), data=new_fifa)
 summary <- summary(basic)
@@ -194,20 +196,22 @@ heatmap(cor_matrix, symm = TRUE, col = colorRampPalette(c("blue", "white", "red"
 
 So we started by looking at the relationship between each of our chosen predictors and the output variable of overall_rating
 
+We saw roughly linear relationships for most cases. However, for value_euro and wage_euro, our scatter plots look very similar to a logarithmic curve. 
+
 ```{r, fig.height=3, fig.width=6}
 par(mfrow = c(1, 2))
-plot(new_fifa$value_euro, new_fifa$overall_rating)
-plot(new_fifa$wage_euro, new_fifa$overall_rating)
+plot(new_fifa$value_euro, new_fifa$overall_rating, main = "Overall Rating vs. Value Euro", xlab="Value Euro", ylab="Overall Rating")
+plot(new_fifa$wage_euro, new_fifa$overall_rating, main = "Overall Rating vs. Wage Euro", xlab="Wage Euro", ylab="Overall Rating")
 ```
 
 ### Fig. 9
 
-We saw roughly linear relationships for most cases. However, for value_euro and wage_euro, our scatter plots look very similar to a logarithmic curve. Thus, we need to apply a transformation to our data and instead use ln(value_euro) and ln(wage_euro)
+Thus, we need to apply a transformation to our data and instead use ln(value_euro) and ln(wage_euro)
 
 ```{r, fig.height=3, fig.width=6}
 par(mfrow = c(1, 2))
-plot(log(new_fifa$value_euro), new_fifa$overall_rating)
-plot(log(new_fifa$wage_euro), new_fifa$overall_rating)
+plot(log(new_fifa$value_euro), new_fifa$overall_rating, main = "Overall Rating vs. Log Value Euro", xlab="Log Value Euro", ylab="Overall Rating")
+plot(log(new_fifa$wage_euro), new_fifa$overall_rating, main = "Overall Rating vs. Log Wage Euro", xlab="Log Wage Euro", ylab="Overall Rating")
 ```
 
 ### Fig. 10
@@ -249,7 +253,7 @@ summary <- summary(model1)
 summary
 ```
 
-So, we found p-values \< 0.05 (our alpha/significance level) for the following predictors: weak_foot, sprint_speed, dribbling, strength, stamina, log(value_euro), log(wage_euro) meaning that these predictors were found to have a statistically significant impact on overall_rating. Because skill_moves had a p-value \> 0.05, it means it is not statistically significant based on our model, so now we will create a new model without this predictor and compare results. This likely means the other variables also account for the impact made by skill moves. Also, in this model we had a very high Adjusted R\^2 of 0.906 which is much higher than our base model’s R\^2 of 0.5495 and means our model does a great job in explaining the variance in overall_rating.
+So, we found p-values < 0.05 (our alpha/significance level) for the following predictors: weak_foot, sprint_speed, dribbling, strength, stamina, log(value_euro), log(wage_euro) meaning that these predictors were found to have a statistically significant impact on overall_rating. Because skill_moves had a p-value > 0.05 (0.4769), it means it is not statistically. Thus, we will create a new model without this predictor and compare results. This likely means the other variables also account for the impact made by skill moves. Also, in this model we had a very high Adjusted $R^2$ of 0.906 which is much higher than our base model’s $R^2$ of 0.5495 and means our model does is effective at explaining the variance in overall_rating.
 
 ```{r}
 model2 <- lm(overall_rating ~ weak_foot.1.5. + sprint_speed + dribbling + strength + stamina + log(value_euro) + log(wage_euro), data=new_fifa)
@@ -259,9 +263,9 @@ summary2
 
 ```
 
-Here we can see we only have significant predictors and increased accuracy in our model.
+Here we can see we only have significant predictors and the same $R^2$
 
-Running an ANOVA to compare our two models:
+Running an ANOVA to compare our two models (model 2 has one less predictor):
 
 ```{r}
 anova(model1, model2)
