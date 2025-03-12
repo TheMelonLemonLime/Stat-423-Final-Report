@@ -379,57 +379,45 @@ In conclusion, there is only a small amount of positive correlation between weak
 
 ```{r, warning=FALSE, message=F}
 correlation <- cor(fifa$overall_rating, fifa$value_euro)
-print(paste("Correlation: ", round(correlation, 4)))
+cat("Correlation: ", round(correlation, 4),"\n")
 
 # Fit basic SLR
 model <- lm(data = training_data, value_euro ~ overall_rating)
 
-# Extract and print R-squared value
+# Extract R-squared value
 r_squared <- summary(model)$r.squared
-print(paste0("R-squared: ", round(r_squared, 4)))
+cat("R-squared: ", round(r_squared, 4))
 ```
 
 
-```{r}
-ggplot(fifa, aes(x = overall_rating, y = value_euro)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  labs(title = "Overall Rating vs Market Value", x = "Overall Rating", y = "Market Value (€)")
-```
-
-### Fig. 14
-
-We have a moderately strong positive relationship between a player's overall rating and their market value from a correlation of 0.6309, As we can see, this is horrendous. Let's look into a transformation!
+We have a strong positive relationship between a player's overall rating and their market value from a correlation of 0.8283. We have an R-squared value of 0.6833 Now let's compare to our log-transformation and verify the choice using a boxcox plot.
 
 
 ```{r}
 boxcox(model, plotit = T)
 ```
 
-### Fig. 15
+### Fig. 14
 
-We can see $\lambda$ = 0 so let's try a log transformation!
+We can see $\lambda$ = 0 so our log transformation seems to hold, now let's check our new correlation and R-squared!
 
 ```{r, warning=FALSE, message=F}
 
 log_correlation <- cor(fifa$overall_rating, log(fifa$value_euro), use = "complete.obs")
-print(paste("Log-transformation Correlation: ", round(log_correlation, 4)))
+cat("Log-transformation Correlation: ", round(log_correlation, 4),"\n")
 
 # Fit basic SLR
 log_transformed_model <- lm(data = training_data, log(value_euro) ~ overall_rating)
 
-# Extract and print R-squared value
+# Extract R-squared value
 r_squared_log <- summary(log_transformed_model)$r.squared
-print(paste0("Log Transformed R-squared: ", round(r_squared_log , 4)))
-ggplot(fifa, aes(x = overall_rating, y = log(value_euro))) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  labs(title = "Overall Rating vs Market Value", x = "Overall Rating", y = "Log Market Value (€)")
+cat("Log Transformed R-squared: ", round(r_squared_log , 4))
+
 ```
 
-### Fig. 16
+### Fig. 15
 
-Our correlation suggests a strong relationship between player overall rating and market value after taking the log-transform of market value. Our r squared is much higher now too.
+Our correlation suggests an even stronger relationship between player overall rating and market value after taking the log-transform of market value. Our r squared is much higher now too.
 
 # Research Question 4:
 
@@ -437,13 +425,13 @@ Our correlation suggests a strong relationship between player overall rating and
 
 We use adjusted R squared and AIC to find best model because a model that has more predictors obviously will have a higher R squared (proportional of variability explained by the model)
 
-Due to the nature that many predictors are significant and they have a lot of multicolinearity.
+We make sure to be wary of our predictors that are significant, looking out for multicolinearity.
 
-So, for the best model, we might not use agility and stamina, but instead use reactions.
+To answer the question of what is the best model, let us define our primary goal, that being prediction. So we want to fit our models to the training data and compare predicted results to the test actual responses.
+
+We first make a guess of a good explanatory model based on our predictor knowledge after looking at the data: 
 
 ```{r}
-
-
 
 
 best_guess_model <- lm(data=fifa, overall_rating ~   sprint_speed + 
@@ -456,6 +444,8 @@ summary(best_guess_model)
 
 
 ```
+
+Not a bad guess but let's now apply our best model tests and now do so on our generated training data!
 
 ```{r}
 
@@ -470,64 +460,70 @@ regsubsets.out <- regsubsets(overall_rating ~  age + height_cm +weight_kgs +
                            long_passing + ball_control + acceleration + sprint_speed+agility +
                            reactions + balance +shot_power +jumping + stamina +strength + long_shots +
                            aggression + interceptions +vision + positioning +penalties + composure + 
-                           marking + standing_tackle +sliding_tackle   ,data=fifa, nvmax=10) 
-                            # nvmax indicates the max number of predictors
+                           marking + standing_tackle +sliding_tackle   ,data=training_data, nvmax=10) 
 
 
 
 
-summary(regsubsets.out)$cp
-summary(regsubsets.out)$bic
+# summary(regsubsets.out)$cp
+# summary(regsubsets.out)$bic
 summary(regsubsets.out)$adjr2
 
-fit1 <- lm(overall_rating ~ age + height_cm +weight_kgs + log(value_euro) + wage_euro + international_reputation.1.5. + national_rating + crossing + finishing + heading_accuracy + short_passing + volleys + dribbling + curve + freekick_accuracy + long_passing + ball_control + acceleration + sprint_speed+agility +reactions + balance +shot_power +jumping + stamina +strength + long_shots + aggression + interceptions +vision + positioning +penalties + composure + marking + standing_tackle +sliding_tackle   ,data=fifa)
+
 ```
 
-From our output from above, we can get some really good models with adjusted R squared near 0.9789. Additionally, we use the step function for AIC below.
+From our output from above, we can get some really good models with adjusted R squared near 0.978. But we can do even better using the step function for AIC! First let's define our "complete" model on our training data, which uses nearly all predictors in the original data set besides a few we discussed that were not good and others we didn't need.
+
 
 ```{r}
 
-# Most comprehensive is dir='both'
-best_model <- step(fit1, dir="both", trace=0) # k=2 by default (AIC), trace=0 to not show each step 
+fit1 <- lm(log(overall_rating) ~ age + height_cm + log(value_euro) + wage_euro + international_reputation.1.5. + national_rating + crossing + finishing + heading_accuracy + short_passing + volleys + dribbling + curve + freekick_accuracy + long_passing + ball_control + acceleration + sprint_speed+agility +reactions + balance +shot_power +jumping + stamina +strength + long_shots + interceptions +vision + positioning +penalties + composure + marking + standing_tackle +sliding_tackle   ,data=training_data)
+
+```
+
+Then use step-wise selection for both directions
+
+```{r}
+# k=2 by default (AIC), trace=0 to not show each step 
+best_model <- step(fit1, dir="both", trace=0) 
 summary(best_model)
 ```
+
+We got an exceptionally high adjusted R-squared value of 0.98, excellent!
 
 # Response to Teacher Question 4:
 
 ## "Is your goal prediction or interpretation? I think prediction is suitable for your dataset. Compute prediction intervals and you could also use a training/test approach."
 
-The best model for prediction isn’t necessarily the best model found for analysis via stepwise regression or regsubsets(), but in this case, using our best analysis model works really well. Now that we have our best model:
+The best model for prediction isn’t necessarily the best model found for analysis via stepwise regression or regsubsets(), but in this case, using our best analysis model works really well. Now that we have our best model, let's do some predicting:
 
 ```{r}
 
 
-# Note this is from research question 4 (our best model)
-prediction_model <- lm(formula = overall_rating ~ age + height_cm + weight_kgs + 
-    log(value_euro) + wage_euro + international_reputation.1.5. + 
-    national_rating + short_passing + long_passing + sprint_speed + 
-    reactions + balance + long_shots + aggression + positioning + 
-    composure + marking, data = training_data)
+# Get prediction intervals for test data (exponentiate since we took log)
+pred_intervals <- exp(predict(best_model, newdata = test_data, 
+                          interval = "prediction", level = 0.95))
 
-#predicted_overall_rating <- predict(prediction_model, newdata = test_data)
-#test_data$overall_rating - predicted_overall_rating
-
-
-# Get prediction intervals for test data
-pred_intervals <- predict(prediction_model, newdata = test_data, interval = "prediction", level = 0.95)
+pred_intervals[, 1] <- round(pred_intervals[, 1])
 
 # Combine actual vs predicted values with intervals
 results <- cbind(test_data$overall_rating, pred_intervals)
-colnames(results) <- c("Actual", "Predicted", "Lower_Bound", "Upper_Bound")
+colnames(results) <- c("Actual", "Predicted", 
+                       "Lower_Bound", "Upper_Bound")
 
 # print first 5 rows
 print(head(results))
 
-# Compute RMSE to evaluate prediction accuracy
-# (----->look into other accuracy tests[like why root of MSE and not just MSE]? I just looked this one up <-----)
+
+# Compute RMSE to evaluate prediction accuracy. We square root to make units not squared.
 rmse <- sqrt(mean((results[, "Actual"] - results[, "Predicted"])^2))
 cat("Root Mean Squared Error (RMSE):", rmse)
 
+
 ```
+
+Our MSE (and RMSE) is low, as we are able to consistently predict a player's rating or be really close to their actual. We decided to round our predicted values to help with interpretability, only increasing our MSE slightly by doing so.
+
 
 ```{r}
 
@@ -543,11 +539,11 @@ ggplot(results, aes(x = Actual, y = Predicted)) +
        x = "Actual Overall Rating",y = "Predicted Overall Rating")
 ```
 
-### Fig. 17
+### Fig. 16
 
 # Contributions
 
-Itroduction:
+Introduction:
 
     - Loading and Cleaning the Data: Maxx
     - Removing Outliers: Harry
