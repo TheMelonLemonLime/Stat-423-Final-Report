@@ -456,11 +456,13 @@ library(leaps) # this is the library that contains the regsubsets function
 regsubsets.out <- regsubsets(overall_rating ~  age + height_cm +weight_kgs + 
                            log(value_euro) + wage_euro + international_reputation.1.5. + 
                            national_rating + crossing + finishing + heading_accuracy + 
-                           short_passing + volleys + dribbling + curve + freekick_accuracy +
-                           long_passing + ball_control + acceleration + sprint_speed+agility +
-                           reactions + balance +shot_power +jumping + stamina +strength + long_shots +
-                           aggression + interceptions +vision + positioning +penalties + composure + 
-                           marking + standing_tackle +sliding_tackle   ,data=training_data, nvmax=10) 
+                           short_passing + volleys + dribbling + curve + 
+                           freekick_accuracy + long_passing + ball_control + 
+                           acceleration + sprint_speed+agility + reactions + balance + 
+                           shot_power +jumping + stamina +strength + long_shots +
+                           aggression + interceptions +vision + positioning +penalties + 
+                           composure + marking + standing_tackle + 
+                           sliding_tackle   ,data=training_data, nvmax=10) 
 
 
 
@@ -477,7 +479,14 @@ From our output from above, we can get some really good models with adjusted R s
 
 ```{r}
 
-fit1 <- lm(log(overall_rating) ~ age + height_cm + log(value_euro) + wage_euro + international_reputation.1.5. + national_rating + crossing + finishing + heading_accuracy + short_passing + volleys + dribbling + curve + freekick_accuracy + long_passing + ball_control + acceleration + sprint_speed+agility +reactions + balance +shot_power +jumping + stamina +strength + long_shots + interceptions +vision + positioning +penalties + composure + marking + standing_tackle +sliding_tackle   ,data=training_data)
+fit1 <- lm(log(overall_rating) ~ age + height_cm + log(value_euro) + wage_euro + 
+international_reputation.1.5. + national_rating + crossing + finishing + 
+heading_accuracy + short_passing + volleys + dribbling + curve + 
+freekick_accuracy + long_passing + ball_control + acceleration + 
+sprint_speed+agility +reactions + balance +shot_power +jumping + 
+stamina +strength + long_shots + interceptions +vision + positioning +
+penalties + composure + marking + standing_tackle +
+sliding_tackle   ,data=training_data)
 
 ```
 
@@ -532,7 +541,8 @@ results <- cbind(test_data$overall_rating, pred_intervals)
 colnames(results) <- c("Actual", "Predicted", "Lower_Bound","Upper_Bound")
 # Plot Actual vs Predicted with prediction intervals
 ggplot(results, aes(x = Actual, y = Predicted)) +
-  geom_point(aes(color = "Actual vs Predicted"), size = 2, shape = 21, color = "black", fill="pink") +
+  geom_point(aes(color = "Actual vs Predicted"), size = 2, shape = 21, 
+  color = "black", fill="pink") +
   geom_errorbar(aes(ymin = Lower_Bound, ymax = Upper_Bound), width = 0.2) +
   geom_abline( color = "blue", linetype ="dashed") +
   labs(title = "Actual vs Predicted Overall Rating with Prediction Intervals",
