@@ -435,7 +435,7 @@ r_squared <- summary(model)$r.squared
 ```
 
 
-Our R-squared value is `r r_squared`. We have a moderately strong positive relationship between a player's overall rating and their market value from a correlation of `r correlation`, As we can see, this is horrendous. Let's look into a transformation!
+Our R-squared value is `r r_squared`. We have a moderately strong positive relationship between a player's overall rating and their market value from a correlation of `r correlation`, Let's look into how a transformation changes this.
 
 
 ```{r, echo=FALSE, fig.height=3}
