@@ -445,7 +445,7 @@ boxcox(model, plotit = T)
 #### Fig. 12
 \
 \
-We can see $\lambda$ = 0 so let's try a log transformation!
+We can see $\lambda$ = 0 might be a good choice so let's try a log transformation!
   
 ```{r, warning=FALSE, message=F, echo=FALSE}
 
@@ -460,7 +460,7 @@ r_squared_log <- summary(log_transformed_model)$r.squared
 #print(paste0("Log Transformed R-squared: ", round(r_squared_log , 4)))
 ```
 
-Our log-transformation correlation is: `r log_correlation`, and our log transformed R-squared is: `r r_squared_log`. Our correlation suggests a strong relationship between player overall rating and market value after taking the log-transform of market value. Our r squared is much higher now too.
+Our log-transformation correlation is: `r log_correlation`, and our log-transformed R-squared is: `r r_squared_log`. Our correlation suggests a strong relationship between player overall rating and market value after taking the log-transform of market value. Our r squared is much higher now too.
 
 # Research Question 4:
 
@@ -596,7 +596,7 @@ ggplot(results, aes(x = Actual, y = Predicted)) +
 
 # Contributions
 
-Itroduction:
+Introduction:
   - Introduction: Maxx
   - Loading and Cleaning the Data: Maxx
 - Removing Outliers: Harry
