@@ -69,14 +69,12 @@ As we can see, our main response variable, overall_rating, is approximately norm
 p1 <- ggplot(data = fifa, aes(x=height_cm, y=weight_kgs))+
   geom_point()
 
-fifa_test <- fifa %>%
+fifa <- fifa %>%
   mutate(height_cm = ifelse(height_cm == 152.4, 177.8, height_cm) ) %>%
   mutate(height_cm = ifelse(height_cm == 154.94, 180.34, height_cm) )  %>%
   mutate(height_cm = ifelse(full_name == "Kazuki Yamaguchi" |name == "H. Nakagawa" | full_name == "Cristian Nahuel Barrios", 154.94, height_cm) ) 
 
-fifa <- fifa_test
-
-p2 <- ggplot(data = fifa_test, aes(x=height_cm, y=weight_kgs))+
+p2 <- ggplot(data = fifa, aes(x=height_cm, y=weight_kgs))+
   geom_point()
 
 grid.arrange(p1, p2, ncol=2)
@@ -349,7 +347,7 @@ discrete_lm <- lm(data=fifa, overall_rating ~ weak_foot.1.5. + skill_moves.1.5. 
 summary(discrete_lm)$coefficients[, c(1, 4)]
 ```
 
-This confirms what we found looking at the boxplots. This linear model found that both predictors are definitely statistically signficiant, as evidenced by the p-values. Based on the estimate for $\hat{\beta_i}$, it is indicated that skill moves has more correlation with overall rating, which is consistent with what we saw in the plots. Both are positively correlated. The model states that, if skill moves rating is held constant, for each star increase of weak foot rating, we can expect overall rating to increase by 0.8555. Also, if weak foot rating is held constant, for each star increase of skill moves rating, we can expect overall rating to increase by 3.5636, which is quite a significant increase.
+This confirms what we found looking at the boxplots. This linear model found that both predictors are definitely statistically signficiant, as evidenced by the p-values. Based on the estimate for $\hat{\beta_i}$, it is indicated that skill moves has more correlation with overall rating, which is consistent with what we saw in the plots. Both are positively correlated. The model states that, if skill moves rating is held constant, for each star increase of weak foot rating, we can expect overall rating to increase by 0.8592. Also, if weak foot rating is held constant, for each star increase of skill moves rating, we can expect overall rating to increase by 3.5786, which is quite a significant increase.
 
 However, we know just including these two variables is not going to be our best model. A more practical question is does including these variables in our base model making it significantly better vs without them. To test this, we will use an f-test using the anova test function.
 
