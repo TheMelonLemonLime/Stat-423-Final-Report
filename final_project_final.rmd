@@ -44,12 +44,12 @@ Our data is from Kaggle: [Football Player Data](https://www.kaggle.com/datasets/
   \item{Which factors are the biggest overall contributors to overall FIFA rating?}
   \item{Do categorical ratings such as weak foot and skill moves affect overall FIFA rating?}
   \item{Does a player’s overall rating contribute to their market value?}
-  \item{What is the best model?}
+  \item{What is the best model to predict overall rating?}
 \end{itemize}
 
 ### Loading and Cleaning the Data
 
-After we load the data, we narrow down to `r ncol(fifa)` variables: overall_rating, weak_foot.1.5., skill_moves.1.5., sprint_speed, dribbling, strength, positions, height_cm, weight_kgs, stamina, value_euro, and wage_euro. We then look into NA values, and when we look at these specific 11 variables, there are only `r nrow(test_na)` NA's across only the wage_euro and value_euro columns. After we remove the NA's we still have `r nrow(fifa)` ovbservations.
+After we load the data, we narrow down to `r ncol(fifa)` variables: overall_rating, weak_foot.1.5., skill_moves.1.5., sprint_speed, dribbling, strength, positions, height_cm, weight_kgs, stamina, value_euro, and wage_euro. We then look into NA values, and when we look at these specific 11 variables, there are only `r nrow(test_na)` NA's across only the wage_euro and value_euro columns. After we remove the NA's we still have `r nrow(fifa)` observations.
 
 For the last research question we use training and testing data, additionally we use more variables. We take the full `r ncol(data)` variables. and split 20% of it for testing. 
 
@@ -63,9 +63,9 @@ ggplot(data = fifa, aes(x=overall_rating))+
 #### Fig. 1
 \
 \
-As we can see, our main response variable, overall_rating, is approximately normally distributed and has no outliers.
+Thus, our main response variable, overall_rating, is approximately normally distributed with no outliers.
 
-```{r, echo=FALSE, fig.width=7, fig.height=1.5}
+```{r, echo=FALSE, fig.width=7, fig.height=1.15}
 p1 <- ggplot(data = fifa, aes(x=height_cm, y=weight_kgs))+
   geom_point()
 
@@ -83,7 +83,7 @@ grid.arrange(p1, p2, ncol=2)
 #### Fig. 2
 \
 \
-We know from background information that height and weight should be positively correlated, and we expect to see that in this visualization. We mostly see this, but something is clearly off. We googled the heights to convert centimeters to inches and found that the outliers occur at heights 5’0” and 5’1”. We also noticed that the data has an empty patch in the middle of the x axis, indicating that some heights are not included. We hypothesized that there was an error by the creators of the dataset in their data scraping process, in which 5’10” players were recorded as 5’0” and 5’11” was recorded as 5’1”. The next code chunk shows us testing this hypothesis and seeing that 5’10” and 5’11” were indeed the missing heights, so we decided to rewrite the data set so that all 5’0” entries were corrected to 5’10” and all 5’1” entries were corrected to 5’11”. However, the issue with this is that there could be a few players who really are 5’0” and 5’1” in the dataset and they need to be recorded with their accurate height. To solve this problem, we looked through the original data source (<https://sofifa.com/players?col=hi&sort=asc&r=190043&set=true>) and searched for 5’0” and 5’1” players. There were only 3, so we manually filtered by name to get their true height reflected in the dataset. After the following chunk the height column will have accurate data.
+We know from background information that height and weight should be positively correlated, and we expect to see that in this visualization. We mostly see this, but something is clearly off. We googled the heights to convert centimeters to inches and found that the outliers occur at heights 5’0” and 5’1”. We also noticed that the data has an empty patch in the middle of the x axis, indicating that some heights are not included. We hypothesized that there was an error by the creators of the dataset in their data scraping process, in which 5’10” players were recorded as 5’0” and 5’11” was recorded as 5’1”. We tested this hypothesis and saw that 5’10” and 5’11” were indeed the missing heights, so we decided to rewrite the data set so that all 5’0” entries were corrected to 5’10” and all 5’1” entries were corrected to 5’11”. However, the issue with this is that there could be a few players who really are 5’0” and 5’1” in the dataset and they need to be recorded with their accurate height. To solve this problem, we looked through the original data source (<https://sofifa.com/players?col=hi&sort=asc&r=190043&set=true>) and searched for 5’0” and 5’1” players. There were only 3, so we manually filtered by name to get their true height reflected in the dataset. After the following chunk the height column will have accurate data.
 
 Now our goal is to detect, analyze, and assess whether outliers in our dataset should be removed or mitigated in another way. To do this, we examined overall rating, height, and weight for potential extreme values. We began by generating boxplots for key numerical variables to visualize any extreme values.
 
@@ -112,7 +112,6 @@ rating_outliers <- fifa[fifa$overall_rating < 50 | fifa$overall_rating > 85, c("
 \
 The highest-rated outliers include Lionel Messi (94), Cristiano Ronaldo (94), and Neymar Jr. (92). Since these values accurately reflect the skill level of these players, they should not be removed. On the other end, the lowest-rated players, such as N. Fuentes and S. Squire (47 overall rating), are likely reserve or youth players. While they appear as outliers, they are realistic and do not indicate data errors.
 
-
 ```{r, echo=FALSE}
 weight_outliers <- fifa[fifa$weight_kgs < 55 | fifa$weight_kgs > 95, c("name", "weight_kgs", "height_cm")]
 ```
@@ -120,7 +119,6 @@ weight_outliers <- fifa[fifa$weight_kgs < 55 | fifa$weight_kgs > 95, c("name", "
 ```{r, echo=FALSE}
 #head(weight_outliers[order(-weight_outliers$weight_kgs), ], 10)  # Heaviest players
 ```
-
 
 ```{r, echo=FALSE}
 #head(weight_outliers[order(weight_outliers$weight_kgs), ], 10)   # Lightest players
@@ -135,15 +133,15 @@ The first step was to log-transform weight to make the distribution more normal.
 par(mfrow= c(1,2))
 plot1 <- ggplot(fifa, aes(x=weight_kgs)) + 
   geom_histogram(binwidth = 2, fill = "blue", alpha = 0.6) +
-  labs(title = "Distribution of Weight Before Log Transformation",
+  labs(title = "Weight Distribution",
        x = "Weight (kg)", y = "Count")
 
 fifa$log_weight <- log(fifa$weight_kgs)
 
 plot2 <- ggplot(fifa, aes(x=log_weight)) + 
   geom_histogram(binwidth = 0.1, fill = "red", alpha = 0.6) +
-  labs(title = "Distribution of Weight After Log Transformation",
-       x = "Log Weight", y = "Count")
+  labs(title = "Log Weight Distribution",
+       x = "Log Weight (kg)", y = "Count")
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
@@ -163,7 +161,7 @@ robust_model <- rlm(overall_rating ~ weight_kgs, data = fifa)
 ggplot(fifa, aes(x = weight_kgs, y = overall_rating)) +
   geom_point(alpha = 0.5) +
   geom_smooth(method = "lm", color = "blue", se = FALSE, linetype = "dashed") +   geom_smooth(method = "rlm", color = "red", se = FALSE) +
-  labs(title = "Standard vs Robust Regression (Weight vs. Overall Rating)",
+  labs(title = "Standard vs Robust Regression (Weight vs. Overall)",
        x = "Weight (kg)", y = "Overall Rating") +
   theme_minimal()
 ```
@@ -194,9 +192,9 @@ Since removing outliers does not significantly improve predictive accuracy, we r
 
 ### "With such a large sample size, you will find a lot of significant predictors. Discuss why."
 
-Our sample size is over 17000 (17898). This can result in many of our predictors being statistically significant because a large sample size leads to an even more precise discovery of relationships between variables, reducing variance. Thus, with a very large sample size, even if the predictor’s impact is smaller, it could still be considered statistically significant. If we think in terms of confidence intervals, they become extremely narrow because the margin of error decreases. While a predictor could be statistically significant, it may not be an impactful predictor of the output in reality.
+Our sample size is over 17000 (17898). This can result in many predictors being statistically significant because a large sample size leads to an even more precise discovery of relationships between variables, reducing variance. Thus, with a large sample size, even if the predictor’s impact is smaller, it could still be considered statistically significant. If we think in terms of confidence intervals, they become extremely narrow because the margin of error decreases. While a predictor could be statistically significant, it may not be an impactful predictor of the output in reality.
 
-One way we can tackle this problem is by using corrections such as Bonferroni, Holm, or Benjamini Hochberg to lower false positive rates. Also, we used training and testing split in predictions, which can reduce the number of samples during training and prevent overfitting to just the training data (and performing poorly on new data), and used AIC to choose models as well.
+One way we can tackle this problem is by using corrections such as Bonferroni, Holm, or Benjamini Hochberg to lower false positive rates. Also, we used training and testing split in predictions, to  reduce the number of samples during training and prevent overfitting to the training data (and performing poorly on new data), and used AIC to choose models as well.
 
 
 # Research Question 1:
@@ -237,8 +235,8 @@ We saw roughly linear relationships for most cases. However, for value_euro and 
 
 ```{r, fig.height=3, fig.width=6, echo=FALSE}
 par(mfrow = c(1, 2))
-plot(fifa$value_euro, fifa$overall_rating, main = "Overall Rating vs. Value Euro", xlab="Value Euro", ylab="Overall Rating")
-plot(fifa$wage_euro, fifa$overall_rating, main = "Overall Rating vs. Wage Euro", xlab="Wage Euro", ylab="Overall Rating")
+plot(fifa$value_euro, fifa$overall_rating, main = "Overall Rating vs. Value Euro", xlab="Value Euro", ylab="Overall Rating", cex.main = 0.8)
+plot(fifa$wage_euro, fifa$overall_rating, main = "Overall Rating vs. Wage Euro", xlab="Wage Euro", ylab="Overall Rating", cex.main = 0.8)
 ```
 
 #### Fig. 7
@@ -248,8 +246,8 @@ Thus, we need to apply a transformation to our data and instead use ln(value_eur
 
 ```{r, fig.height=3, fig.width=6, echo=FALSE}
 par(mfrow = c(1, 2))
-plot(log(fifa$value_euro), fifa$overall_rating, main = "Overall Rating vs. Log Value Euro", xlab="Log Value Euro", ylab="Overall Rating")
-plot(log(fifa$wage_euro), fifa$overall_rating, main = "Overall Rating vs. Log Wage Euro", xlab="Log Wage Euro", ylab="Overall Rating")
+plot(log(fifa$value_euro), fifa$overall_rating, main = "Overall Rating vs. Log Value Euro", xlab="Log Value Euro", ylab="Overall Rating", cex.main = 0.8)
+plot(log(fifa$wage_euro), fifa$overall_rating, main = "Overall Rating vs. Log Wage Euro", xlab="Log Wage Euro", ylab="Overall Rating", cex.main = 0.8)
 ```
 
 #### Fig. 8
@@ -313,7 +311,7 @@ Running an ANOVA to compare our two models (model 2 has one less predictor):
 anova(model1, model2)
 ```
 
-As we can see from the ANOVA, we had a p-value of 0.2091. Remember, in the ANOVA test, our null hypothesis is that there is no difference between our models. Our p-value being > alpha 0.05 proves that we fail to reject the null and do not have significantly significant evidence there is a difference between the two models. We can interpret this as meaning that our smaller model is as effective as the larger one and is a better choice for us to use since it is more condensed. 
+As we can see from the ANOVA, we had a p-value of 0.2091. In the ANOVA test, our null hypothesis is that there is no difference between our models. Our p-value being > alpha 0.05 proves that we fail to reject the null and do not have significantly significant evidence there is a difference between the two models. We can interpret this as meaning  our smaller model is as effective as the larger and thus is a better choice to use since it is more condensed. 
 
 # Research Question 2:
 ## Do categorical ratings such as weak foot and skill moves affect overall FIFA rating?
@@ -359,9 +357,7 @@ anova(model_nondiscrete, model1)
 
 The f-test indicated the base model was significantly better than the model removing discrete predictors, with the pvalue very close to 0. This indicates beyond a reasonable doubt that we should include these predictors in our model, they can be used to predict overall rating.
 
-I'm still curious about the outliers we saw in the boxplots. I wonder if there are some positions for which these predictors don't matter.
-
-Let's look at the same plot for only goalkeepers:
+We're still curious about the outliers we saw in the boxplots. There may be some positions for which these predictors don't matter. Let's look at the same plot for only goalkeepers:
   
 ```{r, fig.width=7, fig.height=3, echo=FALSE}
 gk <- fifa %>% filter(positions == "GK")
@@ -386,9 +382,7 @@ It appears that the correlation for weak foot is weaker than for all positions. 
 
 We also saw some similar issues in the data for centerbacks(CBs). Weak foot seems to have very little correlation with overall rating for CBs, and every CB in the game only have a skill move rating of 2 or 3.
 
-\*It is worth noting that the positions column lists all the positions a player can play in one string. So by filtering `positions == CB`, we are selecting players who play CB as their only position. Domagoj Vida, for example, has positions "CB,RB", so he is not included in this filter even though his primary position is CB. We played around with using the stringr library to include these players as well, but the results weren't as meaningful, so we chose to filter players who play exclusively CB, which is the majority of CBs. This wasn't an issue for goalkeepers as they all only play goalkeeper; outfield positions are more fluid creating this issue.
-
-Repeating our analysis without GKs and CBs:
+\*It is worth noting that the positions column lists all the positions a player can play in one string. So by filtering `positions == CB`, we are selecting players who play CB as their only position. Domagoj Vida, for example, has positions "CB,RB", so he is not included in this filter even though his primary position is CB. We played around with using the stringr library to include these players as well, but the results weren't as meaningful, so we chose to filter players who play exclusively CB, which is the majority of CBs. This wasn't an issue for goalkeepers as they all only play goalkeeper; outfield positions are more fluid creating this issue. Repeating our analysis without GKs and CBs:
   
 ```{r, fig.width=10, fig.height=3, echo=FALSE}
 filtered <- fifa %>% filter(positions != "GK" & positions != "CB")
@@ -413,7 +407,7 @@ boxplot(filtered$overall_rating ~ filtered$skill_moves.1.5.,
 discrete_lm <- lm(data=filtered, overall_rating ~ weak_foot.1.5. + skill_moves.1.5. )
 summary(discrete_lm)$coefficients[, c(1, 4)]
 ```
-Based on the new boxplots, filtering by position didn't affect weak foot that much, but the skill moves plot looks very strongly correlated now. These observations are backed up by the updated linear model, which has a slightly higher $\hat{\beta}$ for weak foot but much higher for skill moves.
+Thus, filtering by position didn't affect weak foot, but skill moves plot looks  strongly correlated. These observations are backed by the updated linear model, which has a slightly higher $\hat{\beta}$ for weak foot but much higher for skill moves.
 
 In conclusion, there is only a small amount of positive correlation between weak foot and overall rating. It is unclear if weak foot really has an effect on overall rating or if the two variables are just correlated. On the other hand, there is a strong positive correlation between skill moves and overall rating. Skill moves is a strong predictor of overall rating. It is either having a strong effect on overall rating, or it is very strongly correlated with a variable that is, such as dribbling or ball_control. However, all goalkeepers in FIFA have one star skill moves, and they are the only players in the game with this. Thus, skill moves is only a useful predictor for non goalkeepers, and using it in a dataset with goalkeepers will make it less effective of a predictor. A similar effect also applies to centerbacks, although less extreme.
 
@@ -474,7 +468,7 @@ To answer the question of what is the best model, let us define our primary goal
 
 We first make a guess of a good explanatory model based on our predictor knowledge after looking at the data: 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=F}
 
 
 best_guess_model <- lm(data=data, overall_rating ~   sprint_speed + 
@@ -490,7 +484,7 @@ summary(best_guess_model)$coefficients[, c(1, 4)]
 
 Not a bad guess but let's now apply our best model tests and now do so on our generated training data!
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=F}
 
 
 ## All subsets
@@ -594,12 +588,14 @@ ggplot(results, aes(x = Actual, y = Predicted)) +
 
 ### Fig. 13
 
+\
+
 # Contributions
 
 Introduction:
   - Introduction: Maxx
   - Loading and Cleaning the Data: Maxx
-- Removing Outliers: Harry
+- Removing Outliers: Harry, Mohit
 - Response to Teacher Question 3: Arnav
 
 Research Question 1: Arnav
